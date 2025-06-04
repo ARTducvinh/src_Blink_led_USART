@@ -1,45 +1,54 @@
-TARGET = test_led
-BUILD_DIR = build
-SRC = src/main.c src/system_stm32f401xx.c
+# Project name
+TARGET = main
+
+# Toolchain
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+SIZE = arm-none-eabi-size
+
+# Paths
+SRCDIR = src
+INCDIR = inc
+BUILDDIR = build
+
+# Source and object files
+SRCS = $(SRCDIR)/main.c $(SRCDIR)/system_stm32f4xx.c
+OBJS = $(BUILDDIR)/main.o $(BUILDDIR)/system_stm32f4xx.o $(BUILDDIR)/startup.o
+
+# Startup and linker script
 STARTUP = startup_stm32f401xc.s
 LDSCRIPT = STM32F401XX_FLASH.ld
 
-PREFIX = arm-none-eabi-
-CC = $(PREFIX)gcc
-AS = $(PREFIX)as
-CP = $(PREFIX)objcopy
-SZ = $(PREFIX)size
+# Flags
+CFLAGS = -mcpu=cortex-m4 -mthumb -Wall -O2 -I$(INCDIR) -ffreestanding
+LDFLAGS = -T$(LDSCRIPT) -nostartfiles -nostdlib
 
-MCU = -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-CFLAGS = $(MCU) -Wall -O0 -g -Iinc
-LDFLAGS = -T$(LDSCRIPT) -nostartfiles -Wl,--gc-sections
-ASFLAGS = $(MCU)
-BINFLAGS = -O binary
+# Build rules
+all: $(BUILDDIR) $(TARGET).elf $(TARGET).bin
 
-OBJ = $(SRC:src/%.c=$(BUILD_DIR)/%.o) $(BUILD_DIR)/startup.o
-ELF = $(BUILD_DIR)/$(TARGET).elf
-BIN = $(BUILD_DIR)/$(TARGET).bin
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
-all: $(BIN)
+$(BUILDDIR)/main.o: $(SRCDIR)/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+$(BUILDDIR)/system_stm32f4xx.o: $(SRCDIR)/system_stm32f4xx.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) $< -o $@
+$(BUILDDIR)/startup.o: $(STARTUP)
+	$(CC) -x assembler-with-cpp -c $< -o $@
 
-$(BUILD_DIR)/startup.o: $(STARTUP) | $(BUILD_DIR)
-	$(AS) $(ASFLAGS) $< -o $@
+$(TARGET).elf: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+	$(SIZE) $@
 
-$(ELF): $(OBJ)
-	$(CC) $(OBJ) $(LDFLAGS) -o $@
-	$(SZ) $@
-
-$(BIN): $(ELF)
-	$(CP) $(BINFLAGS) $< $@
+$(TARGET).bin: $(TARGET).elf
+	$(OBJCOPY) -O binary $< $@
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILDDIR) *.elf *.bin
 
-flash: $(BIN)
-	JLink.exe -device STM32F401CC -if SWD -speed 4000 -autoconnect 1 -CommanderScript flash.jlink
+flash: $(TARGET).bin
+	JLink.exe -CommanderScript flash.jlink
+
+.PHONY: all clean flash

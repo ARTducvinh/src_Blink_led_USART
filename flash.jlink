@@ -1,5 +1,8 @@
-r
-loadbin build/test_led.bin, 0x08000000
+device STM32F401CC
+si SWD
+speed 4000
+connect under reset
+loadbin main.bin, 0x08000000
 r
 g
 exit
