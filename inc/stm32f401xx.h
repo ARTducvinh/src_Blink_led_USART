@@ -17,6 +17,7 @@
 #define RCC_BASE              (AHB1PERIPH_BASE + 0x3800)
 #define USART2_BASE           (APB1PERIPH_BASE + 0x4400)
 #define TIM2_BASE             (APB1PERIPH_BASE + 0x0000)
+#define TIM1_BASE             (APB2PERIPH_BASE + 0x0000)
 #define EXTI_BASE             (APB2PERIPH_BASE + 0x3C00)
 #define SYSCFG_BASE           (APB2PERIPH_BASE + 0x3800)
 #define NVIC_ISER_BASE        (0xE000E100UL)
@@ -90,10 +91,11 @@ typedef struct {
     volatile uint32_t CNT;
     volatile uint32_t PSC;
     volatile uint32_t ARR;
-    // ... các thanh ghi khác nếu cần
+    // ... thêm các thanh ghi khác nếu cần ...
 } TIM_TypeDef;
 
 #define TIM2                ((TIM_TypeDef *) TIM2_BASE)
+#define TIM1                ((TIM_TypeDef *) TIM1_BASE)
 
 /* Cấu trúc thanh ghi EXTI */
 typedef struct {

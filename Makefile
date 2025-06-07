@@ -11,9 +11,9 @@ SRCDIR = src
 INCDIR = inc
 BUILDDIR = build
 
-# Source and object files
-SRCS = $(SRCDIR)/main.c $(SRCDIR)/system_stm32f4xx.c
-OBJS = $(BUILDDIR)/main.o $(BUILDDIR)/system_stm32f4xx.o $(BUILDDIR)/startup.o
+# Source and object files (tự động lấy tất cả file .c trong src)
+SRCS = $(wildcard $(SRCDIR)/*.c)
+OBJS = $(patsubst $(SRCDIR)/%.c,$(BUILDDIR)/%.o,$(SRCS))
 
 # Startup and linker script
 STARTUP = startup_stm32f401xc.s
@@ -29,17 +29,14 @@ all: $(BUILDDIR) $(TARGET).elf $(TARGET).bin
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-$(BUILDDIR)/main.o: $(SRCDIR)/main.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILDDIR)/system_stm32f4xx.o: $(SRCDIR)/system_stm32f4xx.c
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/startup.o: $(STARTUP)
 	$(CC) -x assembler-with-cpp -c $< -o $@
 
-$(TARGET).elf: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+$(TARGET).elf: $(OBJS) $(BUILDDIR)/startup.o
+	$(CC) $(CFLAGS) $(OBJS) $(BUILDDIR)/startup.o -o $@ $(LDFLAGS)
 	$(SIZE) $@
 
 $(TARGET).bin: $(TARGET).elf
